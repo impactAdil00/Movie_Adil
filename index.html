@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bonjour</title>
+  <style>
+    body {
+      text-align: center;
+    }
+
+    #message,
+    #code {
+      width: 300px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    .message-group {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #search-omdb {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: #2e7d32;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #search-omdb:hover {
+      background: #1b5e20;
+    }
+
+    #search-result {
+      min-height: 24px;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    .positive {
+      color: #2e7d32;
+    }
+
+    .negative {
+      color: #c62828;
+    }
+
+    .code-group {
+      margin-top: 15px;
+    }
+
+    #toggle-code {
+      margin-left: 8px;
+      padding: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <p>bonjour</p>
+
+  <label for="message">Votre message :</label>
+  <div class="message-group">
+    <input type="text" id="message" name="message" placeholder="Saisissez un titre de film">
+    <button type="button" id="search-omdb" title="Rechercher sur OMDb" aria-label="Rechercher sur OMDb">➜</button>
+  </div>
+  <div id="search-result" aria-live="polite"></div>
+
+  <div class="code-group">
+    <label for="code">Votre code :</label>
+    <input type="password" id="code" name="code" placeholder="Saisissez votre code">
+    <button type="button" id="toggle-code">Afficher</button>
+  </div>
+
+  <script>
+    const codeInput = document.getElementById('code');
+    const toggleButton = document.getElementById('toggle-code');
+    const messageInput = document.getElementById('message');
+    const searchButton = document.getElementById('search-omdb');
+    const searchResult = document.getElementById('search-result');
+
+    toggleButton.addEventListener('click', () => {
+      const isMasked = codeInput.type === 'password';
+      codeInput.type = isMasked ? 'text' : 'password';
+      toggleButton.textContent = isMasked ? 'Masquer' : 'Afficher';
+    });
+
+    async function searchOmdb() {
+      const title = messageInput.value.trim();
+
+      if (!title) {
+        searchResult.textContent = 'Negatif : veuillez saisir un titre.';
+        searchResult.className = 'negative';
+        return;
+      }
+
+      searchResult.textContent = 'Recherche...';
+      searchResult.className = '';
+
+      try {
+        const response = await fetch(`/api/search?title=${encodeURIComponent(title)}`);
+        const data = await response.json();
+
+        if (response.ok && data.Response === 'True') {
+          searchResult.textContent = `Positif : ${data.Title} (${data.Year})`;
+          searchResult.className = 'positive';
+        } else {
+          searchResult.textContent = `Negatif : ${data.Error || data.error || 'Film introuvable'}`;
+          searchResult.className = 'negative';
+        }
+      } catch (error) {
+        searchResult.textContent = 'Negatif : impossible de contacter le serveur.';
+        searchResult.className = 'negative';
+      }
+    }
+
+    searchButton.addEventListener('click', searchOmdb);
+    messageInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        searchOmdb();
+      }
+    });
+  </script>
+</body>
+</html>
